@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+	<style> .btn{border:1px solid black; padding:5px;display:inline-block} </style>
+</head>
+
+<body>
+  <h1>Guess a Number</h1>
+  <p>Press the following button to start the game:</p>
+
+  <!-- START GAME BUTTON -->
+  <input type="button" class="btn btn-primary" id="btn_start_game" value="Start Game">
+
+  <!-- RESET GAME BUTTON -->
+  <input type="button" class="btn btn-secondary" id="btn_reset_game" value="Reset Game" disabled>
+
+  <p>After starting the game, enter a number between 1 and 100 and press the "Guess" button:</p>
+  <input type="text" id="text_guess" value="50" disabled>
+  <input type="button" class="btn btn-primary" id="btn_guess_made" value="Guess" disabled>
+
+<script>
+
+    // FIX: Get actual DOM references
+    var btn_start_game = document.getElementById("btn_start_game");
+    var btn_reset_game = document.getElementById("btn_reset_game");
+    var btn_guess_made = document.getElementById("btn_guess_made");
+    var text_guess = document.getElementById("text_guess");
+    
+   var ipAddressAndPort = "ec2-54-196-137-134.compute-1.amazonaws.com:8080";
+   var gameId = 0;
+   var numberGuessed = 0;
+
+    // INITIAL BUTTON STATES
+    btn_start_game.disabled = false;
+    btn_guess_made.disabled = true;
+    btn_reset_game.disabled = true;
+
+    // ---------------------------------------------------
+    // START GAME
+    // ---------------------------------------------------
+    $('#btn_start_game').click(function () {
+        gameId = Math.floor(Math.random() * 1000000) + 1;
+
+        btn_start_game.disabled = true;
+        btn_guess_made.disabled = false;
+        btn_reset_game.disabled = false;
+        text_guess.disabled = false;
+        text_guess.value = "50";
+
+        $.post('http://' + ipAddressAndPort + '/startGame',
+            { "gameId": gameId },
+            function (data) {
+                alert(data["APIMessage"]);
+            }
+        );
+    });
+
+    // ---------------------------------------------------
+    // MAKE GUESS
+    // ---------------------------------------------------
+    $('#btn_guess_made').click(function () {
+
+        numberGuessed = parseInt(text_guess.value);
+
+        if (numberGuessed < 1 || numberGuessed > 100 || isNaN(numberGuessed)) {
+            alert("Please enter a number between 1 and 100!");
+            return;
+        }
+
+        $.get("http://" + ipAddressAndPort + "/guessMade",
+            { "gameId": gameId, "guessMade": numberGuessed },
+            function (data) {
+
+                alert(data["APIMessage"]);
+
+                // GAME OVER (WIN OR LOSE)
+                if (data.gameOver === true) {
+
+                    btn_guess_made.disabled = true;
+                    btn_reset_game.disabled = true;
+
+                    btn_start_game.disabled = false;
+                    text_guess.disabled = true;
+                }
+            }
+        );
+    });
+
+    // ---------------------------------------------------
+    // RESET GAME
+    // ---------------------------------------------------
+    $('#btn_reset_game').click(function () {
+
+        btn_start_game.disabled = false;
+        btn_guess_made.disabled = true;
+        btn_reset_game.disabled = true;
+        text_guess.disabled = true;
+
+        text_guess.value = "50";
+
+        alert("Game has been reset.");
+    });
+
+</script>
+
+</body>
+</html>
